@@ -36,6 +36,7 @@ class testset_create():
     def get_kps(self, pcd, keypoints):
         source_xyz = np.array(pcd.points)
         xyz_len = source_xyz.shape[0]
+        keypoints = max(xyz_len, keypoints)
         indexes = np.random.choice(xyz_len, keypoints, replace=False)
         kps = source_xyz[indexes, :]
         return kps
