@@ -7,6 +7,9 @@ import time
 from utils.utils import make_non_exists_dir,to_cuda
 from utils.knn_search import knn_module
 from network import name2network
+import pandas as pd
+from tqdm import tqdm
+import benchmark_helpers
 
 class NMS_sample():
     def __init__(self, num, k):
@@ -208,3 +211,69 @@ class yoho_mat():
 
             np.save(f'{Save_dir}/{id0}-{id1}.npy',matches_in_former)
             np.save(f'{Save_score_dir}/{id0}-{id1}.npy',scores)
+
+    def run_benchmark(self, input_txt, pcd_dir, features_dir, keynum=2500):
+        self.sampler = NMS_sample(keynum, 5)
+        Save_dir = f'{features_dir}/match_{keynum}'
+        make_non_exists_dir(Save_dir)
+        Save_score_dir = f'{features_dir}/match_{keynum}/scores'
+        make_non_exists_dir(Save_score_dir)
+
+
+        Feature_dir = f'{features_dir}/YOHO_Output_Group_feature'
+        Kpts_dir = f'{features_dir}/FCGF_Input_Group_feature'
+        print(f'Matching the keypoints with rotation coherence matcher on {input_txt}')
+
+        # Load problems txt file
+        df = pd.read_csv(input_txt, sep=' ', comment='#')
+        df = df.reset_index()
+        problem_name = os.path.splitext(os.path.basename(input_txt))[0]
+
+        for _, row in tqdm(df.iterrows(), total=df.shape[0]):
+            problem_id, source_pcd_filename, target_pcd_filename, source_transform = \
+                benchmark_helpers.load_problem_no_pcd(row, pcd_dir)
+
+            target_pcd_filename = os.path.splitext(target_pcd_filename)[0]
+            # if os.path.exists(f'{Save_score_dir}/{id0}-{id1}.npy'):continue
+            feats0 = np.load(f'{Feature_dir}/{problem_id}.npy')  # 5000,32,60
+            feats1 = np.load(f'{Feature_dir}/{target_pcd_filename}.npy')  # 5000,32,60
+            keys0 = np.load(f'{Kpts_dir}/{problem_id}_kpts.npy')
+            keys1 = np.load(f'{Kpts_dir}/{target_pcd_filename}_kpts.npy')
+
+            if self.cfg.RD:
+                det_scores0 = np.load(f'{features_dir}/det_score/{problem_id}.npy')
+                det_scores1 = np.load(f'{features_dir}/det_score/{target_pcd_filename}.npy')
+                sample0 = self.sampler.sample(keys0, det_scores0)
+                sample1 = self.sampler.sample(keys1, det_scores1)
+            else:
+                sample0 = np.arange(feats0.shape[0])
+                sample1 = np.arange(feats1.shape[0])
+                np.random.shuffle(sample0)
+                np.random.shuffle(sample1)
+                sample0 = sample0[0:keynum]
+                sample1 = sample1[0:keynum]
+
+            feats0 = feats0[sample0]
+            feats1 = feats1[sample1]
+            keys0 = keys0[sample0]
+            keys1 = keys1[sample1]
+
+            batch = {
+                'feats0': torch.from_numpy(feats1[None, :, :, :].astype(np.float32)),
+                'feats1': torch.from_numpy(feats0[None, :, :, :].astype(np.float32)),
+                'keys0': torch.from_numpy(keys1[None, :, :].astype(np.float32)),
+                'keys1': torch.from_numpy(keys0[None, :, :].astype(np.float32))
+            }
+
+            matches, scores, scores1, scores0 = self.get_ot_match(batch)
+            if matches is None:
+                matches = np.ones(1, 2)
+                scores = np.ones(1)
+
+            matches_in_former = []
+            matches_in_former.append(sample0[matches[:, 1]][:, None])  # note: 1 here is the pc0
+            matches_in_former.append(sample1[matches[:, 0]][:, None])
+            matches_in_former = np.concatenate(matches_in_former, axis=1)
+
+            np.save(f'{Save_dir}/{problem_id}-{target_pcd_filename}.npy', matches_in_former)
+            np.save(f'{Save_score_dir}/{problem_id}-{target_pcd_filename}.npy', scores)
