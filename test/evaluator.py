@@ -143,3 +143,11 @@ class yoho_evaluator:
         with open(f'{self.cfg.base_dir}/results.log','a') as f:
             f.write(msg+'\n')
         print(msg)
+
+    def run_benchmark(self, input_txt, pcd_dir, features_dir, output_dir):
+        self.extractor.run_benchmark(input_txt, pcd_dir, features_dir)
+        self.detector.run_benchmark(dataset)
+        # # matcher
+        # self.matcher.run_benchmark(dataset, self.keynum)
+        # # estimator
+        # self.estimator.run_benchmark(dataset, self.keynum, self.max_iter)

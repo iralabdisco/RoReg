@@ -9,7 +9,7 @@ class Group_feat_network(nn.Module):
         super().__init__()
         self.cfg=cfg
 
-        self.Nei_in_SO3=torch.from_numpy(np.load(f'{self.cfg.SO3_related_files}/Nei_Index_in_SO3_ordered_13.npy').astype(np.int).reshape([-1])).cuda()    #nei 60*12 readin
+        self.Nei_in_SO3=torch.from_numpy(np.load(f'{self.cfg.SO3_related_files}/Nei_Index_in_SO3_ordered_13.npy').astype(int).reshape([-1])).cuda()    #nei 60*12 readin
         self.Rgroup_npy=np.load(f'{self.cfg.SO3_related_files}/Rotation.npy').astype(np.float32)
         self.Rgroup=torch.from_numpy(self.Rgroup_npy).cuda()
 
@@ -49,7 +49,7 @@ class GF_train(nn.Module):
         super().__init__()
         self.cfg=cfg
         self.PartI_net=Group_feat_network(self.cfg)
-        self.R_index_permu=torch.from_numpy(np.load(f'{self.cfg.SO3_related_files}/60_60.npy').astype(np.int)).cuda() 
+        self.R_index_permu=torch.from_numpy(np.load(f'{self.cfg.SO3_related_files}/60_60.npy').astype(int)).cuda()
         
     
     def Des2DR(self,Des1,Des2):#before_rot after_rot

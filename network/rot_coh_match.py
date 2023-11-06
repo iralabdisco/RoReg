@@ -124,7 +124,7 @@ class Cross_attention_block(nn.Module):
         super().__init__()
         self.k=cross_k
         self.s2t=s2t
-        self.perms=torch.from_numpy(np.load(f'{groupdir}/60_60.npy').astype(np.int)).cuda().reshape(-1)
+        self.perms=torch.from_numpy(np.load(f'{groupdir}/60_60.npy').astype(int)).cuda().reshape(-1)
         self.cross_attn=MultiHeadedAttention(4,32)
         self.merge=mlp_2layer(32*3,64,32)
 
@@ -327,7 +327,7 @@ class Match_ot(nn.Module):
         groupdir = self.cfg.SO3_related_files
         self.coor_norm_step=0.025
         self.Graph=Graph_enhance_net()
-        self.perms=torch.from_numpy(np.load(f'{groupdir}/60_60.npy').astype(np.int)).cuda().reshape(-1)
+        self.perms=torch.from_numpy(np.load(f'{groupdir}/60_60.npy').astype(int)).cuda().reshape(-1)
         self.final_mlp=mlp_2layer(64,64,32)
         self.ot_layer=sinkhorn_ot(0.2,100)
 

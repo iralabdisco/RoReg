@@ -36,8 +36,8 @@ class detector_eqv_test(nn.Module):
     def __init__(self, cfg):
         super().__init__()
         self.cfg = cfg
-        self.Nei_in_SO3=torch.from_numpy(np.load(f'{self.cfg.SO3_related_files}/Nei_Index_in_SO3_ordered_13.npy').astype(np.int).reshape([-1])).cuda()
-        self.perm=torch.from_numpy(np.load(f'{self.cfg.SO3_related_files}/60_60.npy').astype(np.int).reshape([-1])).cuda()
+        self.Nei_in_SO3=torch.from_numpy(np.load(f'{self.cfg.SO3_related_files}/Nei_Index_in_SO3_ordered_13.npy').astype(int).reshape([-1])).cuda()
+        self.perm=torch.from_numpy(np.load(f'{self.cfg.SO3_related_files}/60_60.npy').astype(int).reshape([-1])).cuda()
         self.eqv_encoder=nn.ModuleList([Residual_Comb_Conv(32, 64, 16, self.Nei_in_SO3)])
     
     def forward(self,batch):

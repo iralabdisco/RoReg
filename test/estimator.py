@@ -75,7 +75,7 @@ class refiner:
 class extractor_dr_index:
     def __init__(self,cfg):
         self.cfg=cfg
-        self.Nei_in_SO3=torch.from_numpy(np.load(f'{self.cfg.SO3_related_files}/60_60.npy').reshape([-1]).astype(np.int)).cuda()
+        self.Nei_in_SO3=torch.from_numpy(np.load(f'{self.cfg.SO3_related_files}/60_60.npy').reshape([-1]).astype(int)).cuda()
 
     def Des2R_torch(self,des1_eqv,des2_eqv):#beforerot afterrot
         des1_eqv=des1_eqv[:,self.Nei_in_SO3].reshape([-1,60,60])
