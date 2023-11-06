@@ -10,6 +10,8 @@ from functools import partial
 from network import name2network
 import multiprocessing
 from multiprocessing import Pool
+import pandas as pd
+import benchmark_helpers
 
 def R_pre_log(dataset,save_dir):
     writer=open(f'{save_dir}/pre.log','w')
@@ -109,6 +111,32 @@ class extractor_dr_index:
             feats1=torch.from_numpy(feats1[match_pps[:,1]].astype(np.float32)).cuda()
             pre_idxs=self.Batch_Des2R_torch(feats1,feats0).cpu().numpy()
             np.save(f'{Save_dir}/{id0}-{id1}.npy',pre_idxs)
+
+    def Rindex_benchmark(self, input_txt, pcd_dir, features_dir, keynum):
+        match_dir = f'{features_dir}/match_{keynum}'
+        Save_dir = f'{match_dir}/DR_index'
+        make_non_exists_dir(Save_dir)
+        Feature_dir = f'{features_dir}/YOHO_Output_Group_feature'
+
+        print(f'extract the drindex of the matches on {input_txt}')
+
+        # Load problems txt file
+        df = pd.read_csv(input_txt, sep=' ', comment='#')
+        df = df.reset_index()
+        problem_name = os.path.splitext(os.path.basename(input_txt))[0]
+
+        for _, row in tqdm(df.iterrows(), total=df.shape[0]):
+            problem_id, source_pcd_filename, target_pcd_filename, source_transform = \
+                benchmark_helpers.load_problem_no_pcd(row, pcd_dir)
+
+            target_pcd_filename = os.path.splitext(target_pcd_filename)[0]
+            match_pps = np.load(f'{match_dir}/{problem_id}-{target_pcd_filename}.npy')
+            feats0 = np.load(f'{Feature_dir}/{problem_id}.npy')  # 5000,32,60
+            feats1 = np.load(f'{Feature_dir}/{target_pcd_filename}.npy')  # 5000,32,60
+            feats0 = torch.from_numpy(feats0[match_pps[:, 0]].astype(np.float32)).cuda()
+            feats1 = torch.from_numpy(feats1[match_pps[:, 1]].astype(np.float32)).cuda()
+            pre_idxs = self.Batch_Des2R_torch(feats1, feats0).cpu().numpy()
+            np.save(f'{Save_dir}/{problem_id}-{target_pcd_filename}.npy', pre_idxs)
 
 class yohoc_ransac:
     def __init__(self,cfg):
@@ -365,6 +393,75 @@ class extractor_localtrans():
                 Trans.append(trans_one[None,:,:])
             Trans=np.concatenate(Trans,axis=0)
             np.save(f'{Save_dir}/{id0}-{id1}.npy',Trans)
+
+
+    def Rt_pre_benchmark(self, input_txt, pcd_dir, features_dir, keynum):
+        self._load_model()
+        self.network.eval()
+        # dataset: (5000*32*60->pp*32*60)*4 + pre_index_trans-> pp*128*60
+        match_dir = f'{features_dir}/match_{keynum}'
+        DRindex_dir = f'{match_dir}/DR_index'
+        Save_dir = f'{match_dir}/Trans_pre'
+        make_non_exists_dir(Save_dir)
+
+
+        FCGF_dir = f'{features_dir}/FCGF_Input_Group_feature'
+        Kpts_dir = f'{features_dir}/FCGF_Input_Group_feature'
+        YOMO_dir = f'{features_dir}/YOHO_Output_Group_feature'
+
+        # feat1:beforrot feat0:afterrot
+        print(f'Extracting the local transformation on each correspondence of {input_txt}')
+
+        # Load problems txt file
+        df = pd.read_csv(input_txt, sep=' ', comment='#')
+        df = df.reset_index()
+        problem_name = os.path.splitext(os.path.basename(input_txt))[0]
+
+        for _, row in tqdm(df.iterrows(), total=df.shape[0]):
+            problem_id, source_pcd_filename, target_pcd_filename, source_transform = \
+                benchmark_helpers.load_problem_no_pcd(row, pcd_dir)
+
+            target_pcd_filename = os.path.splitext(target_pcd_filename)[0]
+            pps = np.load(f'{match_dir}/{problem_id}-{target_pcd_filename}.npy')
+
+            feats0_fcgf = np.load(f'{FCGF_dir}/{problem_id}.npy')[pps[:, 0], :, :]  # pps*32*60
+            feats1_fcgf = np.load(f'{FCGF_dir}/{target_pcd_filename}.npy')[pps[:, 1], :, :]  # pps*32*60
+            feats0_yomo = np.load(f'{YOMO_dir}/{problem_id}.npy')[pps[:, 0], :, :]  # pps*32*60
+            feats1_yomo = np.load(f'{YOMO_dir}/{target_pcd_filename}.npy')[pps[:, 1], :, :]  # pps*32*60
+            Index_pre = np.load(f'{DRindex_dir}/{problem_id}-{target_pcd_filename}.npy')  # pps
+
+            Keys0 = np.load(f'{Kpts_dir}/{problem_id}_kpts.npy') # pps*3
+            Keys1 = np.load(f'{Kpts_dir}/{target_pcd_filename}_kpts.npy')  # pps*3
+
+            bi = 0
+            Rs = []
+            while (bi * self.test_batch_size < feats0_fcgf.shape[0]):
+                start = bi * self.test_batch_size
+                end = (bi + 1) * self.test_batch_size
+                batch = self.batch_create(feats0_fcgf, feats1_fcgf, feats0_yomo, feats1_yomo, Index_pre, start, end)
+                batch = to_cuda(batch)
+                with torch.no_grad():
+                    batch_output = self.network(batch)
+                bi += 1
+                deltaR = batch_output['quaternion_pre'].cpu().numpy()
+                anchorR = batch_output['pre_idxs'].cpu().numpy()
+                for i in range(deltaR.shape[0]):
+                    R_residual = matrix_from_quaternion(deltaR[i])
+                    R_anchor = self.Rgroup[int(anchorR[i])]
+                    Rs.append((R_residual @ R_anchor)[None, :, :])
+            Rs = np.concatenate(Rs, axis=0)  # pps*3*3
+            Trans = []
+            for R_id in range(Rs.shape[0]):
+                R = Rs[R_id]
+                key0 = Keys0[R_id]  # after rot key0=t+key1@R.T
+                key1 = Keys1[R_id]  # before rot
+                t = key0 - key1 @ R.T
+                trans_one = np.concatenate([R, t[:, None]], axis=1)
+                Trans.append(trans_one[None, :, :])
+            Trans = np.concatenate(Trans, axis=0)
+            np.save(f'{Save_dir}/{problem_id}-{target_pcd_filename}.npy', Trans)
+
+
                
 class yohoo_ransac:
     def __init__(self,cfg):
@@ -452,4 +549,9 @@ class yohoo:
         self.rind_extractor.Rindex(dataset, keynum)
         self.localT_extractor.Rt_pre(dataset, keynum)
         self.ransacer.ransac(dataset, keynum, max_iter)
+
+    def run_benchmark(self,input_txt, pcd_dir, features_dir,keynum,max_iter):
+        self.rind_extractor.Rindex_benchmark(input_txt, pcd_dir, features_dir, keynum)
+        self.localT_extractor.Rt_pre_benchmark(input_txt, pcd_dir, features_dir, keynum)
+        self.ransacer.ransac_benchmark(input_txt, pcd_dir, features_dir, keynum, max_iter)
     
