@@ -29,17 +29,15 @@ class FCGFDataset():
 class testset_create():
     def __init__(self,config):
         self.config=config
+        self.voxel_size = config.voxel_size
         self.Rgroup=np.load(f'{self.config.groupdir}/Rotation.npy')
         self.knn=knn_module.KNN(1)
 
     def get_kps(self, pcd, keypoints):
         source_xyz = np.array(pcd.points)
-        xyz_len = source_xyz.shape[1]
-        if xyz_len > args.n_keypoints:
-            indexes = np.random.choice(xyz_len, args.n_keypoints, replace=False)
-            kps = source_xyz[:, indexes]
-        else:
-            kps = source_xyz
+        xyz_len = source_xyz.shape[0]
+        indexes = np.random.choice(xyz_len, keypoints, replace=False)
+        kps = source_xyz[indexes, :]
         return kps
 
     def get_item_from_pcd(self, pcd: o3d.geometry.PointCloud, g_id):
@@ -60,11 +58,12 @@ class testset_create():
         return (xyz0, coords0, feats)
 
     def get_dict_from_item(self, list_data):
-        xyz0, coords0, feats0, scenepc = list(
-            zip(*list_data))
+        xyz0, coords0, feats0 = list_data
+        xyz0 = [xyz0]
+        coords0 = [coords0]
+        feats0 = [feats0]
         xyz_batch0 = []
         dsxyz_batch0 = []
-        batch_id = 0
 
         def to_tensor(x):
             if isinstance(x, torch.Tensor):
@@ -93,11 +92,50 @@ class testset_create():
         return {
             'pcd0': xyz_batch0,
             'dspcd0': dsxyz_batch0,
-            'scenepc': scenepc,
             'cuts': cuts,
             'sinput0_C': coords_batch0,
             'sinput0_F': feats_batch0.float(),
         }
+
+    def get_features_from_pcd(self, pcd, device, model, output_dir, filename_save):
+        features = []
+        features_gid = []
+
+        Keys_i_orig = self.get_kps(pcd, 5000)
+        np.save(f'{output_dir}/FCGF_Input_Group_feature/{filename_save}_kpts.npy',
+                Keys_i_orig)
+        for g_id in range(60):
+            input_item = self.get_item_from_pcd(pcd, g_id)
+            input_dict = self.get_dict_from_item(input_item)
+            sinput0 = ME.SparseTensor(
+                input_dict['sinput0_F'].to(device),
+                coordinates=input_dict['sinput0_C'].to(device))
+            F0 = model(sinput0).F
+            F0 = F0.detach()
+
+            cuts = input_dict['cuts']
+            make_non_exists_dir(f'{output_dir}/FCGF_Input_Group_feature')
+            feature = F0[cuts[0]:cuts[0 + 1]]
+            pts = input_dict['dspcd0'][cuts[0]:cuts[0 + 1]]  # *config.voxel_size
+
+            Keys_i = Keys_i_orig @ self.Rgroup[g_id]
+
+            xyz_down = pts.T[None, :, :].cuda()  # 1,3,n
+            Keys_i = torch.from_numpy(Keys_i.T[None, :, :].astype(np.float32)).cuda()
+            d, nnindex = self.knn(xyz_down, Keys_i)
+            nnindex = nnindex[0, 0]
+            one_R_output = feature[nnindex, :].cpu().numpy()  # 5000*32
+
+            features.append(one_R_output[:, :, None])
+            features_gid.append(g_id)
+            if len(features_gid) == 60:
+                sort_args = np.array(features_gid)
+                sort_args = np.argsort(sort_args)
+                output = np.concatenate(features, axis=-1)[:, :, sort_args]
+                np.save(f'{output_dir}/FCGF_Input_Group_feature/{filename_save}.npy',
+                        output)
+                features = []
+                features_gid = []
 
     def Feature_extracting_benchmark(self, input_txt, data_dir, output_dir):
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -120,53 +158,21 @@ class testset_create():
         model.eval()
 
         # Load problems txt file
-        df = pd.read_csv(args.input_txt, sep=' ', comment='#')
+        df = pd.read_csv(input_txt, sep=' ', comment='#')
         df = df.reset_index()
         problem_name = os.path.splitext(os.path.basename(args.input_txt))[0]
 
         with torch.no_grad():
             for _, row in tqdm(df.iterrows(), total=df.shape[0]):
                 problem_id, source_pcd, target_pcd, source_transform, target_pcd_filename = \
-                    benchmark_helpers.load_problem(row, args)
+                    benchmark_helpers.load_problem(row, data_dir)
 
                 # Get source features
                 source_pcd = source_pcd.transform(source_transform)
-                features = []
-                features_gid = []
 
-                Keys_i_orig = self.get_kps(source_pcd, 5000)
-                for g_id in range(60):
-                    input_item = self.get_item_from_pcd(source_pcd, g_id)
-                    input_dict = self.get_dict_from_item(input_item)
-                    sinput0 = ME.SparseTensor(
-                        input_dict['sinput0_F'].to(device),
-                        coordinates=input_dict['sinput0_C'].to(device))
-                    F0 = model(sinput0).F
-                    F0 = F0.detach()
-
-                    cuts = input_dict['cuts']
-                    make_non_exists_dir(f'{output_dir}/FCGF_Input_Group_feature')
-                    feature = F0[cuts[0]:cuts[0 + 1]]
-                    pts = input_dict['dspcd0'][cuts[0]:cuts[0 + 1]]  # *config.voxel_size
-
-                    Keys_i = Keys_i_orig @ self.Rgroup[g_id]
-
-                    xyz_down = pts.T[None, :, :].cuda()  # 1,3,n
-                    d, nnindex = self.knn(xyz_down, Keys_i)
-                    nnindex = nnindex[0, 0]
-                    one_R_output = feature[nnindex, :].cpu().numpy()  # 5000*32
-
-                    features.append(one_R_output[:, :, None])
-                    features_gid.append(g_id)
-                    if len(features_gid) == 60:
-                        sort_args = np.array(features_gid)
-                        sort_args = np.argsort(sort_args)
-                        output = np.concatenate(features, axis=-1)[:, :, sort_args]
-                        np.save(f'{output_dir}/FCGF_Input_Group_feature/{problem_id}.npy',
-                                output)
-                        features = []
-                        features_gid = []
-
+                self.get_features_from_pcd(source_pcd, device, model, output_dir, problem_id)
+                if not os.path.exists(f'{output_dir}/FCGF_Input_Group_feature/{target_pcd_filename}.npy'):
+                    self.get_features_from_pcd(target_pcd, device, model, output_dir, target_pcd_filename)
 
 if __name__=="__main__":
     basedir = './data'
@@ -189,14 +195,17 @@ if __name__=="__main__":
     parser.add_argument(
         '--input_txt',
         type=str,
+        default="/benchmark/point_clouds_registration_benchmark/tum/long_office_household_global.txt",
         help='path to problems txt')
     parser.add_argument(
         '--pcd_dir',
         type=str,
+        default="/benchmark/point_clouds_registration_benchmark/tum/long_office_household/",
         help='path to pcd dir')
     parser.add_argument(
         '--out_dir',
         type=str,
+        default="/benchmark/ROREG_TEST/TUM_long/",
         help='path to output dir')
     
     args = parser.parse_args()

@@ -3,16 +3,16 @@ import numpy as np
 import os
 
 
-def load_problem(row, args):
+def load_problem(row, input_dir):
     problem_id = row['id']
 
     source_pcd_filename = row['source']
-    source_pcd_file = os.path.join(args.input_pcd_dir, source_pcd_filename)
+    source_pcd_file = os.path.join(input_dir, source_pcd_filename)
     source_pcd_orig = o3d.io.read_point_cloud(source_pcd_file, remove_nan_points=True,
                                               remove_infinite_points=True)
 
     target_pcd_filename = row['target']
-    target_pcd_file = os.path.join(args.input_pcd_dir, target_pcd_filename)
+    target_pcd_file = os.path.join(input_dir, target_pcd_filename)
     target_pcd_orig = o3d.io.read_point_cloud(target_pcd_file, remove_nan_points=True,
                                               remove_infinite_points=True)
 
