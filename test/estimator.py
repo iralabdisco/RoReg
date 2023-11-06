@@ -591,18 +591,20 @@ class yohoo_ransac:
             best_trans_ransac = 0
             for t_id in range(Trans_ransac.shape[0]):
                 T = Trans_ransac[t_id]
+                if t_id == 0:
+                    best_trans_ransac = T
                 overlap = self.overlap_cal(Keys_m0, Keys_m1, T, scores)
                 if overlap > best_overlap:
                     best_overlap = overlap
                     best_trans_ransac = T
                     recall_time = t_id
-            # refine:
+            # refine
             best_trans_ransac = self.refiner.Refine_trans(Keys_m0, Keys_m1, best_trans_ransac, scores,
                                                           inlinerdist=self.inliner_dist * 2.0)
+
             best_trans_ransac = self.refiner.Refine_trans(Keys_m0, Keys_m1, best_trans_ransac, scores,
                                                           inlinerdist=self.inliner_dist)
             # save
-            print(best_trans_ransac)
             np.savez(f'{Save_dir}/{id0}-{id1}.npz', trans=best_trans_ransac, recalltime=recall_time)
 
 class yohoo:
