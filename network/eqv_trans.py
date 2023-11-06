@@ -11,8 +11,8 @@ class ET_train(nn.Module):
 
         self.Rgroup_npy=np.load(f'{self.cfg.SO3_related_files}/Rotation.npy').astype(np.float32)
         self.Rgroup=torch.from_numpy(self.Rgroup_npy).cuda()
-        self.Nei_in_SO3=torch.from_numpy(np.load(f'{self.cfg.SO3_related_files}/Nei_Index_in_SO3_ordered_13.npy').astype(np.int).reshape([-1])).cuda()    #nei 60*12 readin
-        self.R_index_permu=torch.from_numpy(np.load(f'{self.cfg.SO3_related_files}/60_60.npy').astype(np.int)).cuda() 
+        self.Nei_in_SO3=torch.from_numpy(np.load(f'{self.cfg.SO3_related_files}/Nei_Index_in_SO3_ordered_13.npy').astype(int).reshape([-1])).cuda()    #nei 60*12 readin
+        self.R_index_permu=torch.from_numpy(np.load(f'{self.cfg.SO3_related_files}/60_60.npy').astype(int)).cuda()
 
 
         self.PartI_net=GF_train(self.cfg)
@@ -82,8 +82,8 @@ class ET_test(nn.Module):
 
         self.Rgroup_npy=np.load(f'{self.cfg.SO3_related_files}/Rotation.npy').astype(np.float32)
         self.Rgroup=torch.from_numpy(self.Rgroup_npy).cuda()
-        self.Nei_in_SO3=torch.from_numpy(np.load(f'{self.cfg.SO3_related_files}/Nei_Index_in_SO3_ordered_13.npy').astype(np.int).reshape([-1])).cuda()    #nei 60*12 readin
-        self.R_index_permu=torch.from_numpy(np.load(f'{self.cfg.SO3_related_files}/60_60.npy').astype(np.int)).cuda() 
+        self.Nei_in_SO3=torch.from_numpy(np.load(f'{self.cfg.SO3_related_files}/Nei_Index_in_SO3_ordered_13.npy').astype(int).reshape([-1])).cuda()    #nei 60*12 readin
+        self.R_index_permu=torch.from_numpy(np.load(f'{self.cfg.SO3_related_files}/60_60.npy').astype(int)).cuda()
 
         self.Conv_init=Comb_Conv(32*4,256)
         self.PartII_SO3_Conv_layers=nn.ModuleList([Residual_Comb_Conv(256,512,256,self.Nei_in_SO3)])

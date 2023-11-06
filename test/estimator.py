@@ -324,7 +324,7 @@ class extractor_localtrans():
         feats1_fcgf=torch.from_numpy(feats1_fcgf[start:end,:,:].astype(np.float32))
         feats0_yomo=torch.from_numpy(feats0_yomo[start:end,:,:].astype(np.float32))
         feats1_yomo=torch.from_numpy(feats1_yomo[start:end,:,:].astype(np.float32))
-        index_pre=torch.from_numpy(index_pre[start:end].astype(np.int))
+        index_pre=torch.from_numpy(index_pre[start:end].astype(int))
         return {
                 'before_eqv0':feats1_fcgf,#exchanged
                 'before_eqv1':feats0_fcgf,
@@ -538,6 +538,72 @@ class yohoo_ransac:
             np.savez(f'{Save_dir}/{id0}-{id1}.npz',trans=best_trans_ransac, recalltime=recall_time)
 
         R_pre_log(dataset,Save_dir)
+
+    def ransac_benchmark(self, input_txt, pcd_dir, features_dir, keynum, max_iter=1000):
+        match_dir = f'{features_dir}/match_{keynum}'
+        Trans_dir = f'{match_dir}/Trans_pre'
+        Save_dir = f'{match_dir}/yohoo/{max_iter}iters'
+        Kpts_dir = f'{features_dir}/FCGF_Input_Group_feature'
+        make_non_exists_dir(Save_dir)
+
+        print(f'Ransac with YOHO-O on {input_txt}:')
+
+        # Load problems txt file
+        df = pd.read_csv(input_txt, sep=' ', comment='#')
+        df = df.reset_index()
+        problem_name = os.path.splitext(os.path.basename(input_txt))[0]
+
+        for _, row in tqdm(df.iterrows(), total=df.shape[0]):
+            problem_id, source_pcd_filename, target_pcd_filename, source_transform = \
+                benchmark_helpers.load_problem_no_pcd(row, pcd_dir)
+
+            target_pcd_filename = os.path.splitext(target_pcd_filename)[0]
+            id0, id1 = problem_id, target_pcd_filename
+            # Keypoints
+
+            Keys0 = np.load(f'{Kpts_dir}/{id0}_kpts.npy')
+            Keys1 = np.load(f'{Kpts_dir}/{id1}_kpts.npy')
+
+            # scores
+            scores = np.load(f'{match_dir}/scores/{id0}-{id1}.npy')
+
+            # Key_pps
+            pps = np.load(f'{match_dir}/{id0}-{id1}.npy')
+            Keys_m0 = Keys0[pps[:, 0]]
+            Keys_m1 = Keys1[pps[:, 1]]
+            # Indexs
+            Trans = np.load(f'{Trans_dir}/{id0}-{id1}.npy')
+
+            if self.cfg.RM:
+                if self.cfg.match_n < 0.999:
+                    num = max(scores.shape[0] * self.cfg.match_n, 10)
+                else:
+                    num = self.cfg.match_n
+                sample_index = np.argsort(scores)[-int(num):]
+                Trans = Trans[sample_index]
+
+            index = np.arange(Trans.shape[0])
+            np.random.shuffle(index)
+            Trans_ransac = Trans[index[0:max_iter]]  # if max_iter>index.shape[0] then =index.shape[0] automatically
+            # RANSAC
+            recall_time = 0
+            best_overlap = 0
+            best_trans_ransac = 0
+            for t_id in range(Trans_ransac.shape[0]):
+                T = Trans_ransac[t_id]
+                overlap = self.overlap_cal(Keys_m0, Keys_m1, T, scores)
+                if overlap > best_overlap:
+                    best_overlap = overlap
+                    best_trans_ransac = T
+                    recall_time = t_id
+            # refine:
+            best_trans_ransac = self.refiner.Refine_trans(Keys_m0, Keys_m1, best_trans_ransac, scores,
+                                                          inlinerdist=self.inliner_dist * 2.0)
+            best_trans_ransac = self.refiner.Refine_trans(Keys_m0, Keys_m1, best_trans_ransac, scores,
+                                                          inlinerdist=self.inliner_dist)
+            # save
+            print(best_trans_ransac)
+            np.savez(f'{Save_dir}/{id0}-{id1}.npz', trans=best_trans_ransac, recalltime=recall_time)
 
 class yohoo:
     def __init__(self, cfg):
