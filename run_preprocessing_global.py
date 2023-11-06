@@ -52,11 +52,11 @@ for problem_txt, pcd_dir in zip(problem_txts, pcd_dirs):
     full_command = (base_command +
                     f' --input_txt={BENCHMARK_DIR}/{problem_txt}' +
                     f' --pcd_dir={BENCHMARK_DIR}/{pcd_dir}' +
-                    f' --out_dir={PREPROCESSING_DIR}')
+                    f' --out_dir={PREPROCESSING_DIR}/{pcd_dir}')
 
     problem_name = Path(problem_txt).stem
-    time_command = f'command time --verbose -o {PREPROCESSING_DIR}/{problem_name}_preprocessing_time.txt ' + full_command
-    nvidia_command = (f'nvidia-smi --query-gpu=timestamp,memory.used -i 0 --format=csv -lms 1 > {PREPROCESSING_DIR}/{problem_name}_preprocessing_memory.txt')
+    time_command = f'command time --verbose -o {PREPROCESSING_DIR}/preprocessing_stats/{problem_name}_time.txt ' + full_command
+    nvidia_command = (f'nvidia-smi --query-gpu=timestamp,memory.used -i 0 --format=csv -lms 1 > {PREPROCESSING_DIR}/preprocessing_stats/{problem_name}_memory.txt')
 
     full_command_stats = f'parallel -j2 -u --halt now,success=1 ::: \'{time_command}\' \'{nvidia_command}\''
     commands.append(full_command_stats)
@@ -68,6 +68,7 @@ if answer != "Y":
     exit()
 shutil.rmtree(PREPROCESSING_DIR, ignore_errors=True)
 os.makedirs(PREPROCESSING_DIR)
+os.makedirs(PREPROCESSING_DIR+"/preprocessing_stats/")
 
 # save config in result directory
 txt_commands = os.path.join(PREPROCESSING_DIR, "readme.md")
