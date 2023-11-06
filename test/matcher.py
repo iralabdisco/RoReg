@@ -235,14 +235,16 @@ class yoho_mat():
 
             target_pcd_filename = os.path.splitext(target_pcd_filename)[0]
             # if os.path.exists(f'{Save_score_dir}/{id0}-{id1}.npy'):continue
-            feats0 = np.load(f'{Feature_dir}/{problem_id}.npy')  # 5000,32,60
-            feats1 = np.load(f'{Feature_dir}/{target_pcd_filename}.npy')  # 5000,32,60
-            keys0 = np.load(f'{Kpts_dir}/{problem_id}_kpts.npy')
-            keys1 = np.load(f'{Kpts_dir}/{target_pcd_filename}_kpts.npy')
+
+            id0, id1 = target_pcd_filename, problem_id
+            feats0 = np.load(f'{Feature_dir}/{id0}.npy')  # 5000,32,60
+            feats1 = np.load(f'{Feature_dir}/{id1}.npy')  # 5000,32,60
+            keys0 = np.load(f'{Kpts_dir}/{id0}_kpts.npy')
+            keys1 = np.load(f'{Kpts_dir}/{id1}_kpts.npy')
 
             if self.cfg.RD:
-                det_scores0 = np.load(f'{features_dir}/det_score/{problem_id}.npy')
-                det_scores1 = np.load(f'{features_dir}/det_score/{target_pcd_filename}.npy')
+                det_scores0 = np.load(f'{features_dir}/det_score/{id0}.npy')
+                det_scores1 = np.load(f'{features_dir}/det_score/{id1}.npy')
                 sample0 = self.sampler.sample(keys0, det_scores0)
                 sample1 = self.sampler.sample(keys1, det_scores1)
             else:

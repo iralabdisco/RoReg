@@ -130,9 +130,12 @@ class extractor_dr_index:
                 benchmark_helpers.load_problem_no_pcd(row, pcd_dir)
 
             target_pcd_filename = os.path.splitext(target_pcd_filename)[0]
+            id0, id1 = target_pcd_filename, problem_id
+
             match_pps = np.load(f'{match_dir}/{problem_id}-{target_pcd_filename}.npy')
-            feats0 = np.load(f'{Feature_dir}/{problem_id}.npy')  # 5000,32,60
-            feats1 = np.load(f'{Feature_dir}/{target_pcd_filename}.npy')  # 5000,32,60
+
+            feats0 = np.load(f'{Feature_dir}/{id0}.npy')  # 5000,32,60
+            feats1 = np.load(f'{Feature_dir}/{id1}.npy')  # 5000,32,60
             feats0 = torch.from_numpy(feats0[match_pps[:, 0]].astype(np.float32)).cuda()
             feats1 = torch.from_numpy(feats1[match_pps[:, 1]].astype(np.float32)).cuda()
             pre_idxs = self.Batch_Des2R_torch(feats1, feats0).cpu().numpy()
@@ -424,14 +427,16 @@ class extractor_localtrans():
             target_pcd_filename = os.path.splitext(target_pcd_filename)[0]
             pps = np.load(f'{match_dir}/{problem_id}-{target_pcd_filename}.npy')
 
-            feats0_fcgf = np.load(f'{FCGF_dir}/{problem_id}.npy')[pps[:, 0], :, :]  # pps*32*60
-            feats1_fcgf = np.load(f'{FCGF_dir}/{target_pcd_filename}.npy')[pps[:, 1], :, :]  # pps*32*60
-            feats0_yomo = np.load(f'{YOMO_dir}/{problem_id}.npy')[pps[:, 0], :, :]  # pps*32*60
-            feats1_yomo = np.load(f'{YOMO_dir}/{target_pcd_filename}.npy')[pps[:, 1], :, :]  # pps*32*60
+            id0, id1 = target_pcd_filename, problem_id
+
+            feats0_fcgf = np.load(f'{FCGF_dir}/{id0}.npy')[pps[:, 0], :, :]  # pps*32*60
+            feats1_fcgf = np.load(f'{FCGF_dir}/{id1}.npy')[pps[:, 1], :, :]  # pps*32*60
+            feats0_yomo = np.load(f'{YOMO_dir}/{id0}.npy')[pps[:, 0], :, :]  # pps*32*60
+            feats1_yomo = np.load(f'{YOMO_dir}/{id1}.npy')[pps[:, 1], :, :]  # pps*32*60
             Index_pre = np.load(f'{DRindex_dir}/{problem_id}-{target_pcd_filename}.npy')  # pps
 
-            Keys0 = np.load(f'{Kpts_dir}/{problem_id}_kpts.npy') # pps*3
-            Keys1 = np.load(f'{Kpts_dir}/{target_pcd_filename}_kpts.npy')  # pps*3
+            Keys0 = np.load(f'{Kpts_dir}/{id0}_kpts.npy') # pps*3
+            Keys1 = np.load(f'{Kpts_dir}/{id1}_kpts.npy')  # pps*3
 
             bi = 0
             Rs = []
@@ -558,21 +563,21 @@ class yohoo_ransac:
                 benchmark_helpers.load_problem_no_pcd(row, pcd_dir)
 
             target_pcd_filename = os.path.splitext(target_pcd_filename)[0]
-            id0, id1 = problem_id, target_pcd_filename
+            id0, id1 = target_pcd_filename, problem_id
             # Keypoints
 
             Keys0 = np.load(f'{Kpts_dir}/{id0}_kpts.npy')
             Keys1 = np.load(f'{Kpts_dir}/{id1}_kpts.npy')
 
             # scores
-            scores = np.load(f'{match_dir}/scores/{id0}-{id1}.npy')
+            scores = np.load(f'{match_dir}/scores/{problem_id}-{target_pcd_filename}.npy')
 
             # Key_pps
-            pps = np.load(f'{match_dir}/{id0}-{id1}.npy')
+            pps = np.load(f'{match_dir}/{problem_id}-{target_pcd_filename}.npy')
             Keys_m0 = Keys0[pps[:, 0]]
             Keys_m1 = Keys1[pps[:, 1]]
             # Indexs
-            Trans = np.load(f'{Trans_dir}/{id0}-{id1}.npy')
+            Trans = np.load(f'{Trans_dir}/{problem_id}-{target_pcd_filename}.npy')
 
             if self.cfg.RM:
                 if self.cfg.match_n < 0.999:
@@ -605,7 +610,7 @@ class yohoo_ransac:
             best_trans_ransac = self.refiner.Refine_trans(Keys_m0, Keys_m1, best_trans_ransac, scores,
                                                           inlinerdist=self.inliner_dist)
             # save
-            np.savez(f'{Save_dir}/{id0}-{id1}.npz', trans=best_trans_ransac, recalltime=recall_time)
+            np.savez(f'{Save_dir}/{problem_id}-{target_pcd_filename}.npz', trans=best_trans_ransac, recalltime=recall_time)
 
 class yohoo:
     def __init__(self, cfg):
