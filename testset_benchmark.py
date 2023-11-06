@@ -41,7 +41,6 @@ class testset_create():
         return kps
 
     def get_item_from_pcd(self, pcd: o3d.geometry.PointCloud, g_id):
-        #TODO check xyz0 shape -> should be ok
         xyz0 = np.asarray(pcd.points)
         xyz0 = xyz0 @ self.Rgroup[g_id].T
         # Voxelization
@@ -135,8 +134,7 @@ class testset_create():
                 output = np.concatenate(features, axis=-1)[:, :, sort_args]
                 np.save(f'{output_dir}/FCGF_Input_Group_feature/{filename_save}.npy',
                         output)
-                features = []
-                features_gid = []
+        torch.cuda.empty_cache()
 
     def Feature_extracting_benchmark(self, input_txt, data_dir, output_dir):
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
