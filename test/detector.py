@@ -6,6 +6,8 @@ import time
 from tqdm import tqdm
 import numpy as np
 from network import name2network
+import benchmark_helpers
+import pandas as pd
 
 class yoho_det():
     def __init__(self,cfg):
@@ -45,3 +47,47 @@ class yoho_det():
             argscores = np.argsort(scores)
             scores[argscores] = np.arange(scores.shape[0])/scores.shape[0]
             np.save(f'{savedir}/{pc_id}.npy', scores)
+
+    def run_benchmark(self, input_txt, pcd_dir, features_dir):
+        self.network.eval()
+        savedir = f'{features_dir}/det_score'
+        utils.make_non_exists_dir(savedir)
+        print(f'Evaluating the saliency of points using rotaion guided detector on {input_txt}')
+
+        # Load problems txt file
+        df = pd.read_csv(input_txt, sep=' ', comment='#')
+        df = df.reset_index()
+        problem_name = os.path.splitext(os.path.basename(input_txt))[0]
+
+        with torch.no_grad():
+            for _, row in tqdm(df.iterrows(), total=df.shape[0]):
+                problem_id, source_pcd_filename, target_pcd_filename, source_transform = \
+                    benchmark_helpers.load_problem_no_pcd(row, pcd_dir)
+
+                # Source
+                feats = np.load(f'{features_dir}/YOHO_Output_Group_feature/{problem_id}.npy')
+                batch = {
+                    'feats': torch.from_numpy(feats.astype(np.float32))
+                }
+                batch = utils.to_cuda(batch)
+                with torch.no_grad():
+                    scores = self.network(batch)['scores'].cpu().numpy()
+                # normalization for NMS comparision only
+                argscores = np.argsort(scores)
+                scores[argscores] = np.arange(scores.shape[0]) / scores.shape[0]
+                np.save(f'{savedir}/{problem_id}.npy', scores)
+
+                # Target
+                target_pcd_filename = os.path.splitext(target_pcd_filename)[0]
+                feats = np.load(f'{features_dir}/YOHO_Output_Group_feature/{target_pcd_filename}.npy')
+                batch = {
+                    'feats': torch.from_numpy(feats.astype(np.float32))
+                }
+                batch = utils.to_cuda(batch)
+                with torch.no_grad():
+                    scores = self.network(batch)['scores'].cpu().numpy()
+                # normalization for NMS comparision only
+                argscores = np.argsort(scores)
+                scores[argscores] = np.arange(scores.shape[0]) / scores.shape[0]
+                np.save(f'{savedir}/{target_pcd_filename}.npy', scores)
+

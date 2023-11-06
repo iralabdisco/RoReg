@@ -80,8 +80,8 @@ class yoho_des():
 
         with torch.no_grad():
             for _, row in tqdm(df.iterrows(), total=df.shape[0]):
-                problem_id, source_pcd, target_pcd, source_transform, target_pcd_filename = \
-                    benchmark_helpers.load_problem(row, pcd_dir)
+                problem_id, source_pcd_filename, target_pcd_filename, source_transform = \
+                    benchmark_helpers.load_problem_no_pcd(row, pcd_dir)
 
                 # Source
                 Input_feature=np.load(f'{FCGF_input_dir}/{problem_id}.npy') #5000*32*60
@@ -99,6 +99,7 @@ class yoho_des():
                 np.save(f'{YOHO_output_dir}/{problem_id}.npy',output_feature) #5000*32*60
 
                 # Target
+                target_pcd_filename = os.path.splitext(target_pcd_filename)[0]
                 Input_feature=np.load(f'{FCGF_input_dir}/{target_pcd_filename}.npy') #5000*32*60
                 output_feature=[]
                 bi=0
@@ -111,5 +112,5 @@ class yoho_des():
                     output_feature.append(batch_output['eqv'].detach().cpu().numpy())
                     bi+=1
                 output_feature=np.concatenate(output_feature,axis=0)
-                np.save(f'{YOHO_output_dir}/{problem_id}.npy',output_feature) #5000*32*60
+                np.save(f'{YOHO_output_dir}/{target_pcd_filename}.npy',output_feature) #5000*32*60
 

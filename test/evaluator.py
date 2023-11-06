@@ -145,8 +145,8 @@ class yoho_evaluator:
         print(msg)
 
     def run_benchmark(self, input_txt, pcd_dir, features_dir, output_dir):
-        self.extractor.run_benchmark(input_txt, pcd_dir, features_dir)
-        self.detector.run_benchmark(dataset)
+        #self.extractor.run_benchmark(input_txt, pcd_dir, features_dir)
+        self.detector.run_benchmark(input_txt, pcd_dir, features_dir)
         # # matcher
         # self.matcher.run_benchmark(dataset, self.keynum)
         # # estimator
