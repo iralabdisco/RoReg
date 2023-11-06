@@ -101,6 +101,8 @@ class testset_create():
         features = []
         features_gid = []
 
+        make_non_exists_dir(f'{output_dir}/FCGF_Input_Group_feature')
+
         Keys_i_orig = self.get_kps(pcd, 5000)
         np.save(f'{output_dir}/FCGF_Input_Group_feature/{filename_save}_kpts.npy',
                 Keys_i_orig)
@@ -114,7 +116,6 @@ class testset_create():
             F0 = F0.detach()
 
             cuts = input_dict['cuts']
-            make_non_exists_dir(f'{output_dir}/FCGF_Input_Group_feature')
             feature = F0[cuts[0]:cuts[0 + 1]]
             pts = input_dict['dspcd0'][cuts[0]:cuts[0 + 1]]  # *config.voxel_size
 
@@ -171,6 +172,7 @@ class testset_create():
                 source_pcd = source_pcd.transform(source_transform)
 
                 self.get_features_from_pcd(source_pcd, device, model, output_dir, problem_id)
+                target_pcd_filename = os.path.splitext(target_pcd_filename)[0]
                 if not os.path.exists(f'{output_dir}/FCGF_Input_Group_feature/{target_pcd_filename}.npy'):
                     self.get_features_from_pcd(target_pcd, device, model, output_dir, target_pcd_filename)
 
