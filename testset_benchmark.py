@@ -36,7 +36,8 @@ class testset_create():
     def get_kps(self, pcd, keypoints):
         source_xyz = np.array(pcd.points)
         xyz_len = source_xyz.shape[0]
-        keypoints = max(xyz_len, keypoints)
+        if xyz_len <= keypoints:
+            return source_xyz
         indexes = np.random.choice(xyz_len, keypoints, replace=False)
         kps = source_xyz[indexes, :]
         return kps
@@ -185,7 +186,7 @@ if __name__=="__main__":
         help='path to backbone latest checkpoint (default: None)')
     parser.add_argument(
         '--voxel_size',
-        default=0.025,
+        default=0.1,
         type=float,
         help='voxel size to preprocess point cloud')
     parser.add_argument(
@@ -196,12 +197,12 @@ if __name__=="__main__":
     parser.add_argument(
         '--input_txt',
         type=str,
-        default="/benchmark/point_clouds_registration_benchmark/tum/long_office_household_global.txt",
+        default="/benchmark/point_clouds_registration_benchmark/kaist/urban05_global.txt",
         help='path to problems txt')
     parser.add_argument(
         '--pcd_dir',
         type=str,
-        default="/benchmark/point_clouds_registration_benchmark/tum/long_office_household/",
+        default="/benchmark/point_clouds_registration_benchmark/kaist/urban05/",
         help='path to pcd dir')
     parser.add_argument(
         '--out_dir',
