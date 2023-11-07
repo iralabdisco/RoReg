@@ -6,8 +6,8 @@ The first thing to do is to use `run_preprocessing_global.py` to do the preproce
 
 ## RoReg run
 
-Use `run_registration_global.py` to run RoReg on the preprocessed data
+Use `run_benchamrk_global.py` to run RoReg on the preprocessed data
 
 ## Evaluate
 
-Use `evaluate_global.py` to create the results folder with the results files
+Use `evaluate_all.py` to create the results folder with the results files
