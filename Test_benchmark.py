@@ -18,12 +18,12 @@ parser.add_argument('--ET',default='yohoo',type=str,help = 'yohoc/yohoo')
 parser.add_argument(
     '--input_txt',
     type=str,
-    default="/benchmark/point_clouds_registration_benchmark/tum/long_office_household_global.txt",
+    default="/benchmark/point_clouds_registration_benchmark/kaist/urban05_global.txt",
     help='path to problems txt')
 parser.add_argument(
     '--pcd_dir',
     type=str,
-    default="/benchmark/point_clouds_registration_benchmark/tum/long_office_household/",
+    default="/benchmark/point_clouds_registration_benchmark/kaist/urban05/",
     help='path to pcd dir')
 parser.add_argument(
     '--features_dir',
