@@ -61,14 +61,9 @@ for problem_txt, pcd_dir in zip(problem_txts, pcd_dirs):
     full_command_stats = f'parallel -j2 -u --halt now,success=1 ::: \'{time_command}\' \'{nvidia_command}\''
     commands.append(full_command_stats)
 
-# delete and recreate result directory
-answer = input(f"Delete previous {PREPROCESSING_DIR} experiments? [Y/N] ")
-if answer != "Y":
-    print("Quitting...")
-    exit()
-shutil.rmtree(PREPROCESSING_DIR, ignore_errors=True)
-os.makedirs(PREPROCESSING_DIR)
-os.makedirs(PREPROCESSING_DIR+"/preprocessing_stats/")
+if not os.path.exists(PREPROCESSING_DIR):
+    os.makedirs(PREPROCESSING_DIR)
+    os.makedirs(PREPROCESSING_DIR+"/preprocessing_stats/")
 
 # save config in result directory
 txt_commands = os.path.join(PREPROCESSING_DIR, "readme.md")
