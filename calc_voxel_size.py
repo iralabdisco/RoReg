@@ -17,10 +17,12 @@ def main(args):
         problem_id, source_pcd, target_pcd, source_transform, target_pcd_filename = \
             benchmark_helpers.load_problem(row, args.pcd_dir)
 
+        source_pcd, _ = source_pcd.remove_statistical_outlier(nb_neighbors=10,std_ratio=3.0)
         obb = source_pcd.get_oriented_bounding_box()
         max_extension = obb.extent.max()
         extensions_benchmark.append(max_extension)
 
+        target_pcd, _ = target_pcd.remove_statistical_outlier(nb_neighbors=10, std_ratio=3.0)
         obb = target_pcd.get_oriented_bounding_box()
         max_extension = obb.extent.max()
         extensions_benchmark.append(max_extension)
@@ -29,7 +31,7 @@ def main(args):
     print(avg_extention)
 
     match3d_voxel_size = 0.025
-    match3d_extention = 3.8
+    match3d_extention = 4
     voxel_size = avg_extention/match3d_extention*match3d_voxel_size
     print(voxel_size)
 
