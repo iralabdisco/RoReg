@@ -2,7 +2,7 @@ import os,sys
 sys.path.append('..')
 import numpy as np
 import torch
-import tqdm
+from tqdm import tqdm
 import time
 from utils.utils import make_non_exists_dir,to_cuda
 from utils.knn_search import knn_module
@@ -63,7 +63,7 @@ class mutual():
             datasetname=dataset.name
         Feature_dir=f'{self.cfg.output_cache_fn}/{datasetname}/YOHO_Output_Group_feature'
         alltime=0
-        for pair in tqdm.tqdm(dataset.pair_ids):
+        for pair in tqdm(dataset.pair_ids):
             id0,id1=pair
             # if os.path.exists(f'{Save_dir}/{id0}-{id1}.npy'):continue
             
@@ -166,7 +166,7 @@ class yoho_mat():
         Feature_dir=f'{self.cfg.output_cache_fn}/{datasetname}/YOHO_Output_Group_feature'
         alltime=0
         print(f'Matching the keypoints with rotation coherence matcher on {dataset.name}')
-        for pair in tqdm.tqdm(dataset.pair_ids):
+        for pair in tqdm(dataset.pair_ids):
             id0,id1=pair
             # if os.path.exists(f'{Save_score_dir}/{id0}-{id1}.npy'):continue
             feats0=np.load(f'{Feature_dir}/{id0}.npy') #5000,32,60
