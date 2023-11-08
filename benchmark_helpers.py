@@ -1,6 +1,32 @@
 import open3d as o3d
 import numpy as np
 import os
+from pykdtree.kdtree import KDTree
+
+
+def overlap(cloud1, cloud2, distance):
+    cloud1 = np.array(cloud1.points)
+    cloud2 = np.array(cloud2.points)
+    cloud2_tree = KDTree(cloud2)
+    # distances,indexes  = cloud1_tree.query(cloud1, k = 11, n_jobs=-1)
+    # means= np.mean(distances[:,1:None],axis=1)
+    # std_dev= np.std(distances[:,1:None],axis=1)
+    # cloud2_distances, cloud2_indexes = cloud2_tree.query(cloud1, n_jobs=-1)
+    # result =  means+std_dev - cloud2_distances
+    # neigh_found = len([x for x in result if np.isfinite(x) and x >=0])
+    # for index,point in enumerate(cloud1):
+    #     distances,indexes  = cloud1_tree.query(point, k= 10, n_jobs=-1)
+    #     medians[index] = np.median(distances[1:None])
+        # cloud2_distance, cloud2_indexes = cloud2_tree.query(point, distance_upper_bound=median, n_jobs=-1)
+        # print(medians[index])
+        # if np.isfinite(cloud2_distance):
+            # neigh_found = neigh_found + 1
+            # neigh_found = neigh_found + len([x for x in cloud2_distance if np.isfinite(x)])
+    dist, idx = cloud2_tree.query(cloud1,1, eps=distance/100, distance_upper_bound = distance)
+    neigh_found = np.count_nonzero(np.isfinite(dist))
+    overlap = neigh_found/len(cloud1)
+    return overlap
+
 
 
 def load_problem(row, input_dir):
