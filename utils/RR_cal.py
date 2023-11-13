@@ -96,7 +96,7 @@ def read_trajectory(filename, dim=4):
             if i % 5 != 0:
                 traj.append(lines[i].split('\t')[0:dim])
 
-        traj = np.asarray(traj, dtype=np.float).reshape(-1,dim,dim)
+        traj = np.asarray(traj, dtype=float).reshape(-1,dim,dim)
         
         final_keys = np.asarray(final_keys)
 
@@ -134,7 +134,7 @@ def read_pre_trajectory(filename, dim=4):
             if i % 5 != 0:
                 traj.append(lines[i].split('\t')[0:dim])
 
-        traj = np.asarray(traj, dtype=np.float).reshape(-1,dim,dim)
+        traj = np.asarray(traj, dtype=float).reshape(-1,dim,dim)
 
         
         final_keys = np.asarray(final_keys)
@@ -168,7 +168,7 @@ def read_trajectory_info(filename, dim=6):
             [np.fromstring(item, sep='\t').reshape(1, -1) for item in contents[i * 7 + 1:i * 7 + 7]], axis=0)
         info_list.append(info_matrix)
     
-    cov_matrix = np.asarray(info_list, dtype=np.float).reshape(-1,dim,dim)
+    cov_matrix = np.asarray(info_list, dtype=float).reshape(-1,dim,dim)
     
     return n_frame, cov_matrix
 
@@ -252,7 +252,7 @@ def evaluate_registration(num_fragment, result, result_pairs, gt_pairs, gt, gt_i
     """
 
     err2 = err2 ** 2
-    gt_mask = np.zeros((num_fragment, num_fragment), dtype=np.int)
+    gt_mask = np.zeros((num_fragment, num_fragment), dtype=int)
     flags=[]
     errors=[]
 
