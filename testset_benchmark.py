@@ -43,8 +43,22 @@ class testset_create():
         return kps
 
     def get_item_from_pcd(self, pcd: o3d.geometry.PointCloud, g_id):
-        xyz0 = np.asarray(pcd.points)
-        xyz0 = xyz0 @ self.Rgroup[g_id].T
+
+        centroid, _ = pcd.compute_mean_and_covariance()
+
+        transl_centroid = np.eye(4)
+        # transl_centroid[0:3, 3] = centroid.T
+        # transl_centroid_inv = np.eye(4)
+        # transl_centroid_inv[0:3, 3] = -centroid.T
+        rot = np.eye(4)
+        rot[:3, :3] = self.Rgroup[g_id]
+        # xyz0_h_rot = transl_centroid @ rot @ transl_centroid_inv
+        xyz0_h_rot = rot
+
+        pcd_rotated = pcd.transform(xyz0_h_rot)
+        #o3d.io.write_point_cloud(f'/benchmark/ROREG_TEST/test_pcd_rot_{g_id}.pcd', pcd_rotated)
+        xyz0 = np.asarray(pcd_rotated.points)
+
         # Voxelization
         _, sel0 = ME.utils.sparse_quantize(xyz0 / self.voxel_size, return_index=True)
         # Make point clouds using voxelized points
@@ -56,7 +70,7 @@ class testset_create():
         feats = np.ones((xyz0.shape[0], 1))
         coords0 = np.floor(xyz0 / self.voxel_size)
 
-        return (xyz0, coords0, feats)
+        return (xyz0, coords0, feats), xyz0_h_rot
 
     def get_dict_from_item(self, list_data):
         xyz0, coords0, feats0 = list_data
@@ -108,7 +122,7 @@ class testset_create():
         np.save(f'{output_dir}/FCGF_Input_Group_feature/{filename_save}_kpts.npy',
                 Keys_i_orig)
         for g_id in range(60):
-            input_item = self.get_item_from_pcd(pcd, g_id)
+            input_item, gid_transform = self.get_item_from_pcd(pcd, g_id)
             input_dict = self.get_dict_from_item(input_item)
             sinput0 = ME.SparseTensor(
                 input_dict['sinput0_F'].to(device),
@@ -120,7 +134,10 @@ class testset_create():
             feature = F0[cuts[0]:cuts[0 + 1]]
             pts = input_dict['dspcd0'][cuts[0]:cuts[0 + 1]]  # *config.voxel_size
 
-            Keys_i = Keys_i_orig @ self.Rgroup[g_id]
+            pcd_kps = make_open3d_point_cloud(Keys_i_orig)
+            pcd_kps = pcd_kps.transform(gid_transform)
+
+            Keys_i = np.asarray(pcd_kps.points)
 
             xyz_down = pts.T[None, :, :].cuda()  # 1,3,n
             Keys_i = torch.from_numpy(Keys_i.T[None, :, :].astype(np.float32)).cuda()
@@ -165,13 +182,14 @@ class testset_create():
 
         with torch.no_grad():
             for _, row in tqdm(df.iterrows(), total=df.shape[0]):
+                print(problem_name)
                 problem_id, source_pcd, target_pcd, source_transform, target_pcd_filename = \
                     benchmark_helpers.load_problem(row, data_dir)
 
                 # Get source features
                 source_pcd = source_pcd.transform(source_transform)
-
                 self.get_features_from_pcd(source_pcd, device, model, output_dir, problem_id)
+
                 target_pcd_filename = os.path.splitext(target_pcd_filename)[0]
                 if not os.path.exists(f'{output_dir}/FCGF_Input_Group_feature/{target_pcd_filename}.npy'):
                     self.get_features_from_pcd(target_pcd, device, model, output_dir, target_pcd_filename)
@@ -186,7 +204,7 @@ if __name__=="__main__":
         help='path to backbone latest checkpoint (default: None)')
     parser.add_argument(
         '--voxel_size',
-        default=0.1,
+        default=0.15,
         type=float,
         help='voxel size to preprocess point cloud')
     parser.add_argument(
@@ -197,17 +215,17 @@ if __name__=="__main__":
     parser.add_argument(
         '--input_txt',
         type=str,
-        default="/benchmark/point_clouds_registration_benchmark/kaist/urban05_global.txt",
+        default="/benchmark/point_clouds_registration_benchmark/eth/wood_autumn_global.txt",
         help='path to problems txt')
     parser.add_argument(
         '--pcd_dir',
         type=str,
-        default="/benchmark/point_clouds_registration_benchmark/kaist/urban05/",
+        default="/benchmark/point_clouds_registration_benchmark/eth/wood_autumn/",
         help='path to pcd dir')
     parser.add_argument(
         '--out_dir',
         type=str,
-        default="/benchmark/ROREG_TEST/TUM_long/",
+        default="/benchmark/ROREG_TEST/ETH_WOOD_AUTUMN/",
         help='path to output dir')
     
     args = parser.parse_args()
