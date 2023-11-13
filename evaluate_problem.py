@@ -23,7 +23,7 @@ def main(args):
     result_filename = os.path.join(args.results_dir, result_name)
 
     # RoReg stuff
-    match_dir = f'{args.roreg_dir}/match_5000'
+    match_dir = f'{args.roreg_dir}match_5000'
     Save_dir = f'{match_dir}/yohoo/1000iters'
 
     with open(result_filename, mode='w') as f:
@@ -31,7 +31,12 @@ def main(args):
         csv_writer = csv.writer(f, delimiter=';')
         csv_writer.writerow(header)
 
+    initial_errors = []
+    final_errors = []
+    overlaps = []
+    n_identities = 0
     for _, row in tqdm(df.iterrows(), total=df.shape[0]):
+
         problem_id, source_pcd, target_pcd, source_transform, target_pcd_filename = \
             benchmark_helpers.load_problem(row, args.input_pcd_dir)
 
@@ -39,15 +44,23 @@ def main(args):
 
         # calculate initial error
         moved_source_pcd = copy.deepcopy(source_pcd)
-        moved_source_pcd.transform(source_transform)
+        moved_source_pcd = moved_source_pcd.transform(source_transform)
         initial_error = benchmark_helpers.calculate_error(source_pcd, moved_source_pcd)
+        initial_errors.append(initial_error)
 
-        roreg_transform = os.path.join(Save_dir, f'{problem_id}-{target_pcd_filename}.npz')
-        roreg_transform = np.load(roreg_transform)['trans']
+        roreg_path = os.path.join(Save_dir, f'{problem_id}-{target_pcd_filename}.npz')
+        roreg_transform = np.load(roreg_path)['trans']
 
         # calculate final error
-        moved_source_pcd.transform(roreg_transform)
+        moved_source_pcd = moved_source_pcd.transform(roreg_transform)
         final_error = benchmark_helpers.calculate_error(source_pcd, moved_source_pcd)
+        final_errors.append(final_error)
+
+        overlap = benchmark_helpers.overlap(target_pcd, source_pcd, 0.1)
+        overlaps.append(overlap)
+
+        if np.allclose(roreg_transform, np.eye(4)):
+            n_identities += 1
 
         # write results to file
         str_solution = ' '.join(map(str, roreg_transform.ravel()))
@@ -56,6 +69,12 @@ def main(args):
             csv_writer = csv.writer(f, delimiter=';', quoting=csv.QUOTE_NONE, escapechar=' ')
             csv_writer.writerow(results)
 
+    print(f'Dataset: {problem_name}')
+    print(f'Initial error: {np.median(initial_errors): .2f}')
+    print(f'Final error: {np.median(final_errors): .2f}')
+    print(f'Overlap: {np.median(overlaps): .2f}')
+    print(f'N identity transforms: {n_identities}')
+
 
 if __name__ == '__main__':
 
@@ -63,16 +82,16 @@ if __name__ == '__main__':
 
     # I/O files and dirs
     parser.add_argument('--input_txt', type=str,
-                        default="/benchmark/point_clouds_registration_benchmark/tum/long_office_household_global.txt",
+                        default="/benchmark/point_clouds_registration_benchmark/eth/wood_autumn_global.txt",
                         help='Path to the problem .txt')
     parser.add_argument('--input_pcd_dir', type=str,
-                        default="/benchmark/point_clouds_registration_benchmark/tum/long_office_household/",
+                        default="/benchmark/point_clouds_registration_benchmark/eth/wood_autumn/",
                         help='Directory which contains the pcd files')
     parser.add_argument('--roreg_dir', type=str,
-                        default="/benchmark/ROREG_TEST/TUM_long/",
+                        default="/benchmark/ROREG_TEST/ETH_WOOD_AUTUMN/",
                         help='Directory to take results from')
     parser.add_argument('--results_dir', type=str,
-                        default="/benchmark/ROREG_TEST/TUM_long_results/",
+                        default="/benchmark/ROREG_TEST/ETH_WOOD_AUTUMN/",
                         help='Directory to save the results to')
 
     args = parser.parse_args()
