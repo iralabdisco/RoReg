@@ -2,6 +2,37 @@ import open3d as o3d
 import numpy as np
 import os
 from pykdtree.kdtree import KDTree
+import sys
+
+
+class suppress_stdout_stderr(object):
+    '''
+    A context manager for doing a "deep suppression" of stdout and stderr in
+    Python, i.e. will suppress all print, even if the print originates in a
+    compiled C/Fortran sub-function.
+       This will not suppress raised exceptions, since exceptions are printed
+    to stderr just before a script exits, and after the context manager has
+    exited (at least, I think that is why it lets exceptions through).
+
+    '''
+    def __init__(self):
+        # Open a pair of null files
+        self.null_fds =  [os.open(os.devnull,os.O_RDWR) for x in range(2)]
+        # Save the actual stdout (1) and stderr (2) file descriptors.
+        self.save_fds = [os.dup(1), os.dup(2)]
+
+    def __enter__(self):
+        # Assign the null pointers to stdout and stderr.
+        os.dup2(self.null_fds[0],1)
+        os.dup2(self.null_fds[1],2)
+
+    def __exit__(self, *_):
+        # Re-assign the real stdout/stderr back to (1) and (2)
+        os.dup2(self.save_fds[0],1)
+        os.dup2(self.save_fds[1],2)
+        # Close all file descriptors
+        for fd in self.null_fds + self.save_fds:
+            os.close(fd)
 
 
 def overlap(cloud1, cloud2, distance):
@@ -30,31 +61,34 @@ def overlap(cloud1, cloud2, distance):
 
 
 def load_problem(row, input_dir):
-    problem_id = row['id']
 
-    source_pcd_filename = row['source']
-    source_pcd_file = os.path.join(input_dir, source_pcd_filename)
-    source_pcd_orig = o3d.io.read_point_cloud(source_pcd_file, remove_nan_points=True,
-                                              remove_infinite_points=True)
+    with suppress_stdout_stderr():
 
-    target_pcd_filename = row['target']
-    target_pcd_file = os.path.join(input_dir, target_pcd_filename)
-    target_pcd_orig = o3d.io.read_point_cloud(target_pcd_file, remove_nan_points=True,
-                                              remove_infinite_points=True)
+        problem_id = row['id']
 
-    source_transform = np.eye(4)
-    source_transform[0][0] = row['t1']
-    source_transform[0][1] = row['t2']
-    source_transform[0][2] = row['t3']
-    source_transform[0][3] = row['t4']
-    source_transform[1][0] = row['t5']
-    source_transform[1][1] = row['t6']
-    source_transform[1][2] = row['t7']
-    source_transform[1][3] = row['t8']
-    source_transform[2][0] = row['t9']
-    source_transform[2][1] = row['t10']
-    source_transform[2][2] = row['t11']
-    source_transform[2][3] = row['t12']
+        source_pcd_filename = row['source']
+        source_pcd_file = os.path.join(input_dir, source_pcd_filename)
+        source_pcd_orig = o3d.io.read_point_cloud(source_pcd_file, remove_nan_points=True,
+                                                  remove_infinite_points=True)
+
+        target_pcd_filename = row['target']
+        target_pcd_file = os.path.join(input_dir, target_pcd_filename)
+        target_pcd_orig = o3d.io.read_point_cloud(target_pcd_file, remove_nan_points=True,
+                                                  remove_infinite_points=True)
+
+        source_transform = np.eye(4)
+        source_transform[0][0] = row['t1']
+        source_transform[0][1] = row['t2']
+        source_transform[0][2] = row['t3']
+        source_transform[0][3] = row['t4']
+        source_transform[1][0] = row['t5']
+        source_transform[1][1] = row['t6']
+        source_transform[1][2] = row['t7']
+        source_transform[1][3] = row['t8']
+        source_transform[2][0] = row['t9']
+        source_transform[2][1] = row['t10']
+        source_transform[2][2] = row['t11']
+        source_transform[2][3] = row['t12']
 
     return problem_id, source_pcd_orig, target_pcd_orig, source_transform, target_pcd_filename
 
