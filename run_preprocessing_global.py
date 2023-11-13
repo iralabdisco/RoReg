@@ -9,7 +9,7 @@ GPU = "0"
 os.environ["CUDA_VISIBLE_DEVICES"] = GPU
 
 BENCHMARK_DIR="/benchmark/point_clouds_registration_benchmark/"
-PREPROCESSING_DIR="/benchmark/experiments/RoReg/preprocessing_dynamic_voxel"
+PREPROCESSING_DIR="/benchmark/experiments/RoReg/preprocessing_dynamic_voxel_10_11_2023"
 VOXEL_SIZE = "dynamic"
 VOXEL_DIR = "/benchmark/experiments/RoReg/voxel/"
 

@@ -7,8 +7,7 @@ GPU = "0"
 os.environ["CUDA_VISIBLE_DEVICES"] = GPU
 
 BENCHMARK_DIR="/benchmark/point_clouds_registration_benchmark/"
-PREPROCESSING_DIR="/benchmark/experiments/RoReg/preprocessing/"
-VOXEL_SIZE = 0.1
+PREPROCESSING_DIR="/benchmark/experiments/RoReg/preprocessing_dynamic_voxel_10_11_2023/"
 
 base_command = (f'{PY3}' + ' Test_benchmark.py --RD --RM --ET yohoo ')
 

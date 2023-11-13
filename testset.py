@@ -159,26 +159,25 @@ class testset_create():
                 
                 cuts=input_dict['cuts']
                 scene_pc=input_dict['scenepc']
-                for inb in range(len(scene_pc)):
-                    scene,pc_id,g_id=scene_pc[inb]
-                    make_non_exists_dir(f'{self.output_dir}/{self.dataset_name}/{scene}/FCGF_Input_Group_feature')
-                    feature=F0[cuts[inb]:cuts[inb+1]]
-                    pts=input_dict['dspcd0'][cuts[inb]:cuts[inb+1]]#*config.voxel_size
+                scene,pc_id,g_id=scene_pc[0]
+                make_non_exists_dir(f'{self.output_dir}/{self.dataset_name}/{scene}/FCGF_Input_Group_feature')
+                feature=F0[cuts[0]:cuts[0+1]]
+                pts=input_dict['dspcd0'][cuts[0]:cuts[0+1]]#*config.voxel_size
 
-                    Keys_i=self.kps[f'{scene}_{pc_id}_{g_id}']
-                    xyz_down=pts.T[None,:,:].cuda() #1,3,n
-                    d,nnindex=self.knn(xyz_down,Keys_i)
-                    nnindex=nnindex[0,0]
-                    one_R_output=feature[nnindex,:].cpu().numpy()#5000*32
-                                        
-                    features[f'{scene}_{pc_id}'].append(one_R_output[:,:,None])
-                    features_gid[f'{scene}_{pc_id}'].append(g_id)
-                    if len(features_gid[f'{scene}_{pc_id}'])==60:
-                        sort_args=np.array(features_gid[f'{scene}_{pc_id}'])
-                        sort_args=np.argsort(sort_args)
-                        output=np.concatenate(features[f'{scene}_{pc_id}'],axis=-1)[:,:,sort_args]
-                        np.save(f'{self.output_dir}/{self.dataset_name}/{scene}/FCGF_Input_Group_feature/{pc_id}.npy',output)
-                        features[f'{scene}_{pc_id}']=[]
+                Keys_i=self.kps[f'{scene}_{pc_id}_{g_id}']
+                xyz_down=pts.T[None,:,:].cuda() #1,3,n
+                d,nnindex=self.knn(xyz_down,Keys_i)
+                nnindex=nnindex[0,0]
+                one_R_output=feature[nnindex,:].cpu().numpy()#5000*32
+
+                features[f'{scene}_{pc_id}'].append(one_R_output[:,:,None])
+                features_gid[f'{scene}_{pc_id}'].append(g_id)
+                if len(features_gid[f'{scene}_{pc_id}'])==60:
+                    sort_args=np.array(features_gid[f'{scene}_{pc_id}'])
+                    sort_args=np.argsort(sort_args)
+                    output=np.concatenate(features[f'{scene}_{pc_id}'],axis=-1)[:,:,sort_args]
+                    np.save(f'{self.output_dir}/{self.dataset_name}/{scene}/FCGF_Input_Group_feature/{pc_id}.npy',output)
+                    features[f'{scene}_{pc_id}']=[]
 
 
     def batch_feature_extraction(self):

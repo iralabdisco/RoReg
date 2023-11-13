@@ -7,8 +7,8 @@ GPU = "0"
 os.environ["CUDA_VISIBLE_DEVICES"] = GPU
 
 BENCHMARK_DIR="/benchmark/point_clouds_registration_benchmark/"
-PREPROCESSING_DIR="/benchmark/experiments/RoReg/preprocessing/"
-RESULTS_DIR="/benchmark/experiments/RoReg/results/"
+PREPROCESSING_DIR="/benchmark/experiments/RoReg/preprocessing_dynamic_voxel_10_11_2023/"
+RESULTS_DIR="/benchmark/experiments/RoReg/results_dynamic_voxel/"
 
 base_command = (f'{PY3}' + ' evaluate_problem.py ')
 
