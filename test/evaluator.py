@@ -55,6 +55,7 @@ class yoho_evaluator:
         errors = []
         init_errors = []
         overlaps = []
+        all_trasl = []
         for pair in dataset.pair_ids:
             id0,id1 = pair
 
@@ -84,6 +85,10 @@ class yoho_evaluator:
             gt_h = np.eye(4)
             gt_h[:3, :] = gt
 
+            trasl_comp = gt_h[0:3, 3].T
+            gt_trasl = np.linalg.norm(trasl_comp)
+            all_trasl.append(gt_trasl)
+
             source_pcd_gt = source_pcd_gt.transform(gt_h)
             source_pcd_est = source_pcd_est.transform(trans)
 
@@ -107,7 +112,7 @@ class yoho_evaluator:
                 fmrs.append(0)
         fmr = np.mean(np.array(fmrs))
         ir = np.mean(np.array(irs))
-        return fmr, ir, errors, init_errors, overlaps
+        return fmr, ir, errors, init_errors, overlaps, all_trasl
     
     def rr_scene(self, dataset):
         # RR,RRE,RTE of pointdsc
@@ -143,17 +148,19 @@ class yoho_evaluator:
         errors_median = []
         init_errors_median = []
         overlaps_median = []
+        trals_all = []
         for name, dataset in datasets.items():
             if type(dataset) is str: continue
-            fmr, ir, errors, init_errors, overlaps = self.fmr_ir_scene(dataset)
+            fmr, ir, errors, init_errors, overlaps, trasls = self.fmr_ir_scene(dataset)
             fmrs.append(fmr)
             irs.append(ir)
             errors_median.append(np.median(errors))
             init_errors_median.append(np.median(init_errors))
             overlaps_median.append(np.median(overlaps))
+            trals_all.append(np.mean(trasls))
 
 
-        fmr = np.mean(np.array(fmrs))        
+        fmr = np.mean(np.array(fmrs))
         ir = np.mean(np.array(irs))        
         # rr pointdsc
         rr_dsc, rre_dsc, rte_dsc = [],[],[]
@@ -187,6 +194,8 @@ class yoho_evaluator:
             print(f'Initial error median: {init_errors_median[i]: .2f}')
             print(f'Final error median: {errors_median[i]: .2f}')
             print(f'Overlaps median: {overlaps_median[i]: .2f}')
+            print(f'Trasl mean: {trals_all[i]: .2f}')
+            print("----")
 
     def run_benchmark(self, input_txt, pcd_dir, features_dir):
         self.extractor.run_benchmark(input_txt, pcd_dir, features_dir)
