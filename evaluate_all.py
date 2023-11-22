@@ -7,8 +7,8 @@ GPU = "0"
 os.environ["CUDA_VISIBLE_DEVICES"] = GPU
 
 BENCHMARK_DIR="/benchmark/point_clouds_registration_benchmark/"
-PREPROCESSING_DIR="/benchmark/experiments/RoReg/preprocessing_dynamic_voxel_10_11_2023/"
-RESULTS_DIR="/benchmark/experiments/RoReg/results_dynamic_voxel/"
+PREPROCESSING_DIR="./data/YOHO_FCGF/Testset/"
+RESULTS_DIR="/benchmark/experiments/RoReg/results/"
 
 base_command = (f'{PY3}' + ' evaluate_problem.py ')
 
@@ -44,13 +44,17 @@ pcd_dirs = ['kaist/urban05/',
             'planetary/p2at_met/',
             'planetary/p2at_met/']
 
+datasets = (['urban05', 'apartment', 'gazebo_summer', 'gazebo_winter', 'hauptgebaude', 'plain', 'stairs',
+             'wood_autumn', 'wood_summer', 'long_office_household', 'pioneer_slam', 'pioneer_slam3', 'box_met',
+             'p2at_met', 'planetary_map'])
+
 commands = []
 
-for problem_txt, pcd_dir in zip(problem_txts, pcd_dirs):
+for problem_txt, pcd_dir, dataset in zip(problem_txts, pcd_dirs, datasets):
     full_command = (base_command +
                     f' --input_txt={BENCHMARK_DIR}/{problem_txt}' +
                     f' --input_pcd_dir={BENCHMARK_DIR}/{pcd_dir}' +
-                    f' --roreg_dir={PREPROCESSING_DIR}/{pcd_dir}' +
+                    f' --roreg_dir={PREPROCESSING_DIR}/{dataset}/problems/' +
                     f' --results_dir={RESULTS_DIR}')
 
     problem_name = Path(problem_txt).stem

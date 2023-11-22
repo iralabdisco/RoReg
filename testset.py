@@ -220,7 +220,7 @@ if __name__=="__main__":
     
     parser.add_argument(
         '--datadir',
-        default=f'{basedir}/origin_data',
+        default=f'{basedir}/origin_data/benchmark/',
         type=str,
         help='dir for origindata')       
     parser.add_argument(

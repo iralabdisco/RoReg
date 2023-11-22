@@ -23,7 +23,7 @@ Test_Args=add_argument_group("Test_Args")
 #Dirs
 Dirs.add_argument('--base_dir',type=str,default=base_dir,
                         help="base dir containing the whole project")
-Dirs.add_argument("--origin_data_dir",type=str,default=f"{base_dir}/origin_data",
+Dirs.add_argument("--origin_data_dir",type=str,default=f"{base_dir}/origin_data/benchmark/",
                         help="the dir containing whole datas")
 Dirs.add_argument("--backbone",type=str,default=backbone,
                         help="name of backbone")

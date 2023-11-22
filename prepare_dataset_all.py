@@ -8,7 +8,7 @@ GPU = "0"
 os.environ["CUDA_VISIBLE_DEVICES"] = GPU
 
 BENCHMARK_DIR="/benchmark/point_clouds_registration_benchmark/"
-OUTPUT_DIR = "./data/origin_data/BENCHMARK/"
+OUTPUT_DIR = "./data/origin_data/benchmark/"
 
 base_command = (f'{PY3}' + ' prepare_benchmark_dataset.py ')
 
@@ -44,21 +44,21 @@ pcd_dirs = ['kaist/urban05/',
             'planetary/p2at_met/',
             'planetary/p2at_met/']
 
-out_dirs = ['urban05/',
-            'apartment/',
-            'gazebo_summer/',
-            'gazebo_winter/',
-            'hauptgebaude/',
-            'plain/',
-            'stairs/',
-            'wood_autumn/',
-            'wood_summer/',
-            'long_office_household/',
-            'pioneer_slam/',
-            'pioneer_slam3/',
-            'box_met/',
-            'p2at_met/',
-            'planetary_map/']
+out_dirs = ['urban05/problems/',
+            'apartment/problems/',
+            'gazebo_summer/problems/',
+            'gazebo_winter/problems/',
+            'hauptgebaude/problems/',
+            'plain/problems/',
+            'stairs/problems/',
+            'wood_autumn/problems/',
+            'wood_summer/problems/',
+            'long_office_household/problems/',
+            'pioneer_slam/problems/',
+            'pioneer_slam3/problems/',
+            'box_met/problems/',
+            'p2at_met/problems/',
+            'planetary_map/problems/']
 
 commands = []
 

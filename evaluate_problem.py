@@ -35,6 +35,7 @@ def main(args):
     final_errors = []
     overlaps = []
     n_identities = 0
+    index = 0
     for _, row in tqdm(df.iterrows(), total=df.shape[0]):
 
         problem_id, source_pcd, target_pcd, source_transform, target_pcd_filename = \
@@ -48,7 +49,7 @@ def main(args):
         initial_error = benchmark_helpers.calculate_error(source_pcd, moved_source_pcd)
         initial_errors.append(initial_error)
 
-        roreg_path = os.path.join(Save_dir, f'{problem_id}-{target_pcd_filename}.npz')
+        roreg_path = os.path.join(Save_dir, f'{index}-{index+1}.npz')
         roreg_transform = np.load(roreg_path)['trans']
 
         # calculate final error
@@ -68,6 +69,8 @@ def main(args):
         with open(result_filename, mode='a') as f:
             csv_writer = csv.writer(f, delimiter=';', quoting=csv.QUOTE_NONE, escapechar=' ')
             csv_writer.writerow(results)
+
+        index = index + 2
 
     print(f'Dataset: {problem_name}')
     print(f'Initial error: {np.median(initial_errors): .2f}')

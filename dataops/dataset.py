@@ -185,6 +185,22 @@ def get_dataset_name(dataset_name,origin_data_dir):
             datasets[scenes[i]].name=f'{dataset_name}/{scenes[i]}'
         return datasets
 
+    if dataset_name in ['urban05', 'apartment', 'gazebo_summer', 'gazebo_winter', 'hauptgebaude', 'plain', 'stairs',
+                        'wood_autumn', 'wood_summer', 'long_office_household', 'pioneer_slam', 'pioneer_slam3',
+                        'box_met', 'p2at_met', 'planetary_map']:
+        datasets={}
+        datasets['wholesetname']=f'{dataset_name}'
+        scenes=['problems']
+        if dataset_name == "planetary_map":
+            stationnums = [204]
+        else:
+            stationnums=[200]
+        for i in range(len(scenes)):
+            root_dir=f'{origin_data_dir}/{dataset_name}/'+scenes[i]
+            datasets[scenes[i]]=ThrDMatchPartDataset(root_dir,stationnums[i])
+            datasets[scenes[i]].name=f'{dataset_name}/{scenes[i]}'
+        return datasets
+
 
     if dataset_name=='WHU-TLS':
         datasets={}

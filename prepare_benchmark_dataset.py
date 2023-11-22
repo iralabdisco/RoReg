@@ -22,7 +22,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '--output_dir',
         type=str,
-        default="./data/origin_data/BENCHMARK/gazebo_summer",
+        default="./data/origin_data/benchmark/gazebo_summer/problems/",
         help='path to output dir')
 
     args = parser.parse_args()

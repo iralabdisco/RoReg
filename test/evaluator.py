@@ -142,7 +142,7 @@ class yoho_evaluator:
         for name, dataset in datasets.items():
             if type(dataset) is str: continue
             dataset_names.append(name)
-            #self.process_scene(dataset)
+            self.process_scene(dataset)
         # fmr and is
         fmrs, irs = [], []
         errors_median = []
@@ -163,33 +163,33 @@ class yoho_evaluator:
         fmr = np.mean(np.array(fmrs))
         ir = np.mean(np.array(irs))        
         # rr pointdsc
-        rr_dsc, rre_dsc, rte_dsc = [],[],[]
-        for name, dataset in datasets.items():
-            if type(dataset) is str: continue
-            rr,rre,rte = self.rr_scene(dataset)
-            rr_dsc.append(rr)
-            rre_dsc.append(rre)
-            rte_dsc.append(rte)
-        rr_dsc = np.mean(np.array(rr_dsc))   
-        rre_dsc = np.mean(np.array(rre_dsc))   
-        rte_dsc = np.mean(np.array(rte_dsc))               
+        # rr_dsc, rre_dsc, rte_dsc = [],[],[]
+        # for name, dataset in datasets.items():
+        #     if type(dataset) is str: continue
+        #     rr,rre,rte = self.rr_scene(dataset)
+        #     rr_dsc.append(rr)
+        #     rre_dsc.append(rre)
+        #     rte_dsc.append(rte)
+        # rr_dsc = np.mean(np.array(rr_dsc))
+        # rre_dsc = np.mean(np.array(rre_dsc))
+        # rte_dsc = np.mean(np.array(rte_dsc))
         # rr
-        if datasets['wholesetname'] == 'demo': rr_predator = 1.0
-        else: rr_predator,_,_=RR_cal.benchmark(self.cfg,datasets,self.keynum,self.max_iter,yoho_sign=self.ET)
+        # if datasets['wholesetname'] == 'demo': rr_predator = 1.0
+        # else: rr_predator,_,_=RR_cal.benchmark(self.cfg,datasets,self.keynum,self.max_iter,yoho_sign=self.ET)
         # output
-        datasetname = datasets['wholesetname']
-        msg=f'{datasetname}-{self.GF}-{self.RD}-{self.RM}-{self.ET}-{self.keynum}keys-{self.max_iter}iters\n'
-        msg+=f'feature matching recall          : {fmr:.5f}\n' \
-             f'inlier ratio                     : {ir:.5f}\n' \
-             f'registration recall(predator)    : {rr_predator:.5f}\n' \
-             f'rotation error(pointdsc)         : {rre_dsc:.5f}\n' \
-             f'translation error(pointdsc)      : {rte_dsc:.5f}\n' \
-             f'registration recall(pointdsc)    : {rr_dsc:.5f}'
+        # datasetname = datasets['wholesetname']
+        # msg=f'{datasetname}-{self.GF}-{self.RD}-{self.RM}-{self.ET}-{self.keynum}keys-{self.max_iter}iters\n'
+        # msg+=f'feature matching recall          : {fmr:.5f}\n' \
+        #      f'inlier ratio                     : {ir:.5f}\n' \
+        #      f'registration recall(predator)    : {rr_predator:.5f}\n' \
+        #      f'rotation error(pointdsc)         : {rre_dsc:.5f}\n' \
+        #      f'translation error(pointdsc)      : {rte_dsc:.5f}\n' \
+        #      f'registration recall(pointdsc)    : {rr_dsc:.5f}'
 
-        with open(f'{self.cfg.base_dir}/results.log','a') as f:
-            f.write(msg+'\n')
-        print(msg)
-        for i in range(4):
+        # with open(f'{self.cfg.base_dir}/results.log','a') as f:
+        #     f.write(msg+'\n')
+        # print(msg)
+        for i in range(len(dataset_names)):
             print(f'Dataset: {dataset_names[i]}')
             print(f'Initial error median: {init_errors_median[i]: .2f}')
             print(f'Final error median: {errors_median[i]: .2f}')
