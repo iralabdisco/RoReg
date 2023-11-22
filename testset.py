@@ -156,7 +156,8 @@ class testset_create():
                         coordinates=input_dict['sinput0_C'].to(device))
                 F0 = model(sinput0).F
                 F0 = F0.detach()
-                
+                torch.cuda.empty_cache()
+
                 cuts=input_dict['cuts']
                 scene_pc=input_dict['scenepc']
                 scene,pc_id,g_id=scene_pc[0]
